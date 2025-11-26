@@ -4,6 +4,7 @@ from rest_framework.response import Response
 
 from .models import Activity, Team, Profile
 from .serializers import ActivitySerializer, TeamSerializer, ProfileSerializer
+from .serializers import RegisterSerializer
 
 
 class ActivityViewSet(viewsets.ModelViewSet):
@@ -31,3 +32,21 @@ class TeamViewSet(viewsets.ModelViewSet):
         team = self.get_object()
         team.members.add(request.user)
         return Response({'status': 'joined'})
+
+
+class RegisterView(viewsets.ViewSetMixin, viewsets.GenericViewSet):
+    def create(self, request):
+        """Register a new user and return a JWT token pair."""
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        # create JWT tokens
+        from rest_framework_simplejwt.tokens import RefreshToken
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': {'id': user.id, 'username': user.username, 'email': user.email}
+        })

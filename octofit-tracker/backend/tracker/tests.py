@@ -31,3 +31,22 @@ class ActivityAPITests(TestCase):
         list_resp = self.client.get('/api/activities/')
         self.assertEqual(list_resp.status_code, 200)
         self.assertGreaterEqual(len(list_resp.json()), 1)
+
+
+class AuthTests(TestCase):
+    def test_register_and_token(self):
+        resp = self.client.post('/api/auth/register/', {'username': 'newuser', 'password': 'pw123'})
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn('access', data)
+        self.assertIn('refresh', data)
+
+    def test_token_auth_allows_create(self):
+        # Register user first
+        resp = self.client.post('/api/auth/register/', {'username': 'tokenuser', 'password': 'pw123'})
+        token = resp.json().get('access')
+        # Use token to create activity
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION='Bearer ' + token)
+        post = client.post('/api/activities/', {'activity_type': 'run', 'duration_minutes': 10})
+        self.assertEqual(post.status_code, 201)
