@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, build-octofit-app ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install backend requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r octofit-tracker/backend/requirements.txt
+      - name: Run Django tests
+        env:
+          DJANGO_SETTINGS_MODULE: octofit_tracker.settings
+        run: |
+          python -m django test tracker
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install frontend dependencies
+        working-directory: ./octofit-tracker/frontend
+        run: npm ci
+      - name: Run frontend tests
+        working-directory: ./octofit-tracker/frontend
+        run: npm test -- --watchAll=false --coverage
+      - name: Upload frontend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: octofit-tracker/frontend/coverage

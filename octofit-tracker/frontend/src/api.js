@@ -1,0 +1,42 @@
+const API_BASE = process.env.REACT_APP_API_BASE || '';
+
+function authHeaders(){
+  const token = localStorage.getItem('access_token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+export async function fetchActivities(){
+  const res = await fetch(`${API_BASE}/api/activities/`, { credentials: 'include', headers: authHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch activities');
+  return res.json();
+}
+
+export async function createActivity(payload){
+  const res = await fetch(`${API_BASE}/api/activities/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    credentials: 'include',
+    body: JSON.stringify(payload)
+  });
+  return res;
+}
+
+export async function login({ username, password }){
+  const res = await fetch(`${API_BASE}/api/auth/token/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+  return res;
+}
+
+export async function register({ username, password, email }){
+  const res = await fetch(`${API_BASE}/api/auth/register/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password, email })
+  });
+  return res;
+}
+
+export default { fetchActivities, createActivity, login, register };
